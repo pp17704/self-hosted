@@ -5,8 +5,9 @@ metadata:
 spec:
   selector:
     app: flask-app
-    version: blue      # Start by routing to BLUE pods
+    version: blue
   ports:
     - protocol: TCP
       port: 80
       targetPort: 5000
+  type: ClusterIP

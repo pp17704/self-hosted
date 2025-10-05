@@ -11,7 +11,7 @@ env:
 
 jobs:
   test:
-    runs-on: self-hosted  # Ensures job runs on YOUR laptop, not GitHub cloud
+    runs-on: self-hosted
     steps:
       - name: Checkout source
         uses: actions/checkout@v4
@@ -49,7 +49,6 @@ jobs:
 
       - name: Load image to KIND
         run: |
-          # Ensure the image is visible to the KIND cluster
           kind load docker-image ${{ env.IMAGE_NAME }}:latest --name arjuna-multinode
 
       - name: Ensure K8s namespace exists
@@ -59,15 +58,19 @@ jobs:
             kubectl create namespace $Env:NAMESPACE
           }
 
+      - name: Deploy service
+        run: |
+          kubectl apply -f k8s/service.yaml -n ${{ env.NAMESPACE }}
+
       - name: Deploy BLUE version
         run: |
           kubectl apply -f k8s/deployment-blue.yaml -n ${{ env.NAMESPACE }}
           kubectl rollout status deployment/flask-app-blue -n ${{ env.NAMESPACE }} --timeout=300s
 
-      - name: Smoke test blue deployment (optional)
+      - name: Smoke test blue deployment
         run: |
           kubectl get pods -n ${{ env.NAMESPACE }} -l version=blue
-          # Add curl, requests, or whatever health checks you want to verify blue deployment
+          kubectl wait --for=condition=ready pod -l app=flask-app,version=blue -n ${{ env.NAMESPACE }} --timeout=300s
 
       - name: Cutover Production Traffic to BLUE
         run: |
