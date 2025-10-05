@@ -28,7 +28,6 @@ jobs:
           pip install pytest
 
       - name: Run tests
-        shell: pwsh
         run: |
           try {
             pytest
@@ -54,7 +53,6 @@ jobs:
           kind load docker-image ${{ env.IMAGE_NAME }}:latest --name arjuna-multinode
 
       - name: Ensure K8s namespace exists
-        shell: pwsh
         run: |
           $ns = kubectl get namespace $Env:NAMESPACE
           if ($LASTEXITCODE -ne 0) {
