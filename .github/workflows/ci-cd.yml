@@ -73,4 +73,6 @@ jobs:
 
       - name: Cutover Production Traffic to BLUE
         run: |
-          kubectl patch service flask-app-service -n ${{ env.NAMESPACE }} -p '{"spec":{"selector":{"app":"flask-app","version":"blue"}}}'
+          kubectl patch service flask-app-service -n devops-practice -p '{\"spec\":{\"selector\":{\"app\":\"flask-app\",\"version\":\"blue\"}}}'
+
+
