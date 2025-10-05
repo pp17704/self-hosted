@@ -52,9 +52,13 @@ jobs:
           # Ensure the image is visible to the KIND cluster
           kind load docker-image ${{ env.IMAGE_NAME }}:latest --name arjuna-multinode
 
-      - name: Prepare K8s namespace
+      - name: Ensure K8s namespace exists
         run: |
-          kubectl get namespace ${{ env.NAMESPACE }} || kubectl create namespace ${{ env.NAMESPACE }}
+           $ns = kubectl get namespace devops-practice
+           if ($LASTEXITCODE -ne 0) {
+           kubectl create namespace devops-practice
+               }
+
 
       - name: Deploy to Kubernetes
         run: |
