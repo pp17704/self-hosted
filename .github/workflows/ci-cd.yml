@@ -14,10 +14,10 @@ jobs:
   test:
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v3
+    - uses: actions/checkout@v4  # Updated to v4
     
     - name: Set up Python
-      uses: actions/setup-python@v4
+      uses: actions/setup-python@v5  # Updated to v5
       with:
         python-version: '3.9'
     
@@ -36,7 +36,7 @@ jobs:
     needs: test
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v3
+    - uses: actions/checkout@v4  # Updated to v4
     
     - name: Build Docker image
       run: |
@@ -48,7 +48,7 @@ jobs:
         docker save ${{ env.IMAGE_NAME }}:latest > flask-app.tar
     
     - name: Upload Docker image artifact
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4  # Updated to v4
       with:
         name: docker-image
         path: flask-app.tar
@@ -58,17 +58,17 @@ jobs:
     runs-on: ubuntu-latest
     if: github.ref == 'refs/heads/main'
     steps:
-    - uses: actions/checkout@v3
+    - uses: actions/checkout@v4  # Updated to v4
     
     - name: Download Docker image artifact
-      uses: actions/download-artifact@v3
+      uses: actions/download-artifact@v4  # Updated to v4
       with:
         name: docker-image
     
     - name: Set up KIND
-      uses: helm/kind-action@v1.4.0
+      uses: helm/kind-action@v1.10.0  # Updated to latest version
       with:
-        cluster_name: arjuna-multinode
+        cluster_name: kind
     
     - name: Load Docker image to KIND
       run: |
@@ -82,8 +82,11 @@ jobs:
         kubectl apply -f k8s/service.yaml
         
         # Wait for deployment
-        kubectl rollout status deployment/flask-app -n devops-practice
+        kubectl rollout status deployment/flask-app -n devops-practice --timeout=300s
         
         # Show deployment status
         kubectl get pods -n devops-practice
         kubectl get services -n devops-practice
+        
+        # Test the deployment
+        kubectl wait --for=condition=ready pod -l app=flask-app -n devops-practice --timeout=300s
