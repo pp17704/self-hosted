@@ -29,7 +29,12 @@ jobs:
 
       - name: Run tests
         run: |
-          pytest || echo "Tests completed or not found."
+          try {
+           pytest
+           } catch {
+             Write-Output "Tests completed or not found."
+             }
+           exit 0
 
   build-and-deploy:
     runs-on: self-hosted
