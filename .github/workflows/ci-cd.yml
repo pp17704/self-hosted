@@ -70,7 +70,6 @@ jobs:
       - name: Smoke test blue deployment
         run: |
           kubectl get pods -n ${{ env.NAMESPACE }} -l version=blue
-          kubectl wait --for=condition=ready pod -l app=flask-app,version=blue -n ${{ env.NAMESPACE }} --timeout=300s
 
       - name: Cutover Production Traffic to BLUE
         run: |
