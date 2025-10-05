@@ -28,13 +28,14 @@ jobs:
           pip install pytest
 
       - name: Run tests
+        shell: pwsh
         run: |
           try {
-           pytest
-           } catch {
-             Write-Output "Tests completed or not found."
-             }
-           exit 0
+            pytest
+          } catch {
+            Write-Output "Tests completed or not found."
+          }
+          exit 0
 
   build-and-deploy:
     runs-on: self-hosted
@@ -53,21 +54,23 @@ jobs:
           kind load docker-image ${{ env.IMAGE_NAME }}:latest --name arjuna-multinode
 
       - name: Ensure K8s namespace exists
+        shell: pwsh
         run: |
-           $ns = kubectl get namespace devops-practice
-           if ($LASTEXITCODE -ne 0) {
-           kubectl create namespace devops-practice
-               }
+          $ns = kubectl get namespace $Env:NAMESPACE
+          if ($LASTEXITCODE -ne 0) {
+            kubectl create namespace $Env:NAMESPACE
+          }
 
-
-      - name: Deploy to Kubernetes
+      - name: Deploy BLUE version
         run: |
-          kubectl apply -f k8s/namespace.yaml
-          kubectl apply -f k8s/deployment.yaml
-          kubectl apply -f k8s/service.yaml
-          kubectl rollout status deployment/flask-app -n ${{ env.NAMESPACE }} --timeout=300s
+          kubectl apply -f k8s/deployment-blue.yaml -n ${{ env.NAMESPACE }}
+          kubectl rollout status deployment/flask-app-blue -n ${{ env.NAMESPACE }} --timeout=300s
 
-      - name: Show deployment status
+      - name: Smoke test blue deployment (optional)
         run: |
-          kubectl get pods -n ${{ env.NAMESPACE }}
-          kubectl get svc -n ${{ env.NAMESPACE }}
+          kubectl get pods -n ${{ env.NAMESPACE }} -l version=blue
+          # Add curl, requests, or whatever health checks you want to verify blue deployment
+
+      - name: Cutover Production Traffic to BLUE
+        run: |
+          kubectl patch service flask-app-service -n ${{ env.NAMESPACE }} -p '{"spec":{"selector":{"app":"flask-app","version":"blue"}}}'

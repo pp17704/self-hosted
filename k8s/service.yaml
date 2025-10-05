@@ -2,12 +2,11 @@ apiVersion: v1
 kind: Service
 metadata:
   name: flask-app-service
-  namespace: devops-practice
 spec:
   selector:
     app: flask-app
+    version: blue      # Start by routing to BLUE pods
   ports:
     - protocol: TCP
       port: 80
       targetPort: 5000
-  type: ClusterIP
