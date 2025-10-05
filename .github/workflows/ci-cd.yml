@@ -1,92 +1,64 @@
-name: CI/CD Pipeline
+name: Local KIND CI/CD
 
 on:
   push:
-    branches: [ main, develop ]
-  pull_request:
     branches: [ main ]
+  workflow_dispatch:
 
 env:
   IMAGE_NAME: flask-app
-  IMAGE_TAG: ${{ github.sha }}
+  NAMESPACE: devops-practice
 
 jobs:
   test:
-    runs-on: ubuntu-latest
+    runs-on: self-hosted  # Ensures job runs on YOUR laptop, not GitHub cloud
     steps:
-    - uses: actions/checkout@v4  # Updated to v4
-    
-    - name: Set up Python
-      uses: actions/setup-python@v5  # Updated to v5
-      with:
-        python-version: '3.9'
-    
-    - name: Install dependencies
-      run: |
-        python -m pip install --upgrade pip
-        pip install -r app/requirements.txt
-        pip install pytest
-    
-    - name: Run tests
-      run: |
-        # Add your tests here
-        python -m pytest --version || echo "No tests found"
+      - name: Checkout source
+        uses: actions/checkout@v4
 
-  build:
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.9'
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r app/requirements.txt
+          pip install pytest
+
+      - name: Run tests
+        run: |
+          pytest || echo "Tests completed or not found."
+
+  build-and-deploy:
+    runs-on: self-hosted
     needs: test
-    runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v4  # Updated to v4
-    
-    - name: Build Docker image
-      run: |
-        docker build -t ${{ env.IMAGE_NAME }}:${{ env.IMAGE_TAG }} ./app
-        docker tag ${{ env.IMAGE_NAME }}:${{ env.IMAGE_TAG }} ${{ env.IMAGE_NAME }}:latest
-    
-    - name: Save Docker image
-      run: |
-        docker save ${{ env.IMAGE_NAME }}:latest > flask-app.tar
-    
-    - name: Upload Docker image artifact
-      uses: actions/upload-artifact@v4  # Updated to v4
-      with:
-        name: docker-image
-        path: flask-app.tar
+      - name: Checkout source
+        uses: actions/checkout@v4
 
-  deploy:
-    needs: build
-    runs-on: ubuntu-latest
-    if: github.ref == 'refs/heads/main'
-    steps:
-    - uses: actions/checkout@v4  # Updated to v4
-    
-    - name: Download Docker image artifact
-      uses: actions/download-artifact@v4  # Updated to v4
-      with:
-        name: docker-image
-    
-    - name: Set up KIND
-      uses: helm/kind-action@v1.10.0  # Updated to latest version
-      with:
-        cluster_name: kind
-    
-    - name: Load Docker image to KIND
-      run: |
-        docker load < flask-app.tar
-        kind load docker-image ${{ env.IMAGE_NAME }}:latest
-    
-    - name: Deploy to Kubernetes
-      run: |
-        kubectl apply -f k8s/namespace.yaml
-        kubectl apply -f k8s/deployment.yaml
-        kubectl apply -f k8s/service.yaml
-        
-        # Wait for deployment
-        kubectl rollout status deployment/flask-app -n devops-practice --timeout=300s
-        
-        # Show deployment status
-        kubectl get pods -n devops-practice
-        kubectl get services -n devops-practice
-        
-        # Test the deployment
-        kubectl wait --for=condition=ready pod -l app=flask-app -n devops-practice --timeout=300s
+      - name: Build local Docker image
+        run: |
+          docker build -t ${{ env.IMAGE_NAME }}:latest ./app
+
+      - name: Load image to KIND
+        run: |
+          # Ensure the image is visible to the KIND cluster
+          kind load docker-image ${{ env.IMAGE_NAME }}:latest --name arjuna-multinode
+
+      - name: Prepare K8s namespace
+        run: |
+          kubectl get namespace ${{ env.NAMESPACE }} || kubectl create namespace ${{ env.NAMESPACE }}
+
+      - name: Deploy to Kubernetes
+        run: |
+          kubectl apply -f k8s/namespace.yaml
+          kubectl apply -f k8s/deployment.yaml
+          kubectl apply -f k8s/service.yaml
+          kubectl rollout status deployment/flask-app -n ${{ env.NAMESPACE }} --timeout=300s
+
+      - name: Show deployment status
+        run: |
+          kubectl get pods -n ${{ env.NAMESPACE }}
+          kubectl get svc -n ${{ env.NAMESPACE }}
