@@ -1,0 +1,26 @@
+apiVersion: argoproj.io/v1alpha1
+kind: AppProject
+metadata:
+  name: demo-team
+  namespace: argocd
+spec:
+  description: Project for Demo Team applications
+  sourceRepos:
+    - 'https://github.com/pp17704/self-hosted.git'
+  destinations:
+    - namespace: demo-apps
+      server: https://kubernetes.default.svc
+  clusterResourceWhitelist:
+    - group: ""
+      kind: Namespace
+  namespaceResourceWhitelist:
+    - group: apps
+      kind: Deployment
+    - group: ""
+      kind: Service
+  roles:
+    - name: developer
+      description: Can sync and get apps in demo-team
+      policies:
+        - p, proj:demo-team:developer, applications, get, demo-team/*, allow
+        - p, proj:demo-team:developer, applications, sync, demo-team/*, allow

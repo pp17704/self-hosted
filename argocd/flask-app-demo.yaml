@@ -1,0 +1,23 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: flask-app-demo
+  namespace: argocd
+spec:
+  project: demo-team         # <--- Use your custom project
+  source:
+    repoURL: https://github.com/pp17704/self-hosted.git
+    targetRevision: main
+    path: helm-charts/flask-app
+    helm:
+      valueFiles:
+        - values-dev.yaml
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: demo-apps
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=true
