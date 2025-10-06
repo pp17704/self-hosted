@@ -3,7 +3,11 @@ env: "development"
 namespace: "dev"
 resources:
   limits:
+<<<<<<< HEAD
     cpu: 100mmm
+=======
+    cpu: 50m
+>>>>>>> parent of 3b01829 (Update values-dev.yaml)
     memory: 64Mi
   requests:
     cpu: 25m
