@@ -1,0 +1,45 @@
+apiVersion: argoproj.io/v1alpha1
+kind: ApplicationSet
+metadata:
+  name: flask-app-environments
+  namespace: argocd
+spec:
+  generators:
+  - list:
+      elements:
+      - environment: dev
+        namespace: dev
+        valueFile: values-dev.yaml
+        replicas: "1"
+      - environment: staging
+        namespace: staging
+        valueFile: values-staging.yaml
+        replicas: "2"
+      - environment: prod
+        namespace: production
+        valueFile: values-prod.yaml
+        replicas: "3"
+  template:
+    metadata:
+      name: 'flask-app-{{environment}}'
+    spec:
+      project: default
+      source:
+        repoURL: https://github.com/pp17704/self-hosted.git
+        targetRevision: main
+        path: helm-charts/flask-app
+        helm:
+          valueFiles:
+          - '{{valueFile}}'
+          parameters:
+          - name: replicaCount
+            value: '{{replicas}}'
+      destination:
+        server: https://kubernetes.default.svc
+        namespace: '{{namespace}}'
+      syncPolicy:
+        automated:
+          prune: true
+          selfHeal: true
+        syncOptions:
+        - CreateNamespace=true

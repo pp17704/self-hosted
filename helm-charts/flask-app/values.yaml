@@ -1,0 +1,26 @@
+# Default values
+replicaCount: 2
+image:
+  repository: flask-app
+  tag: latest
+  pullPolicy: Never
+
+service:
+  type: ClusterIP
+  port: 80
+  targetPort: 5000
+
+ingress:
+  enabled: false
+  host: flask-app.local
+
+env: "default"
+namespace: "default"
+
+resources:
+  limits:
+    cpu: 100m
+    memory: 128Mi
+  requests:
+    cpu: 50m
+    memory: 64Mi

@@ -1,0 +1,10 @@
+replicaCount: 3
+env: "production"
+namespace: "production"
+resources:
+  limits:
+    cpu: 200m
+    memory: 256Mi
+  requests:
+    cpu: 100m
+    memory: 128Mi
