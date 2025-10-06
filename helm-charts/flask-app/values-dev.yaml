@@ -3,7 +3,7 @@ env: "development"
 namespace: "dev"
 resources:
   limits:
-    cpu: 100m
+    cpu: 100mmm
     memory: 64Mi
   requests:
     cpu: 25m
